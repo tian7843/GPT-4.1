@@ -1,0 +1,44 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest  # 你可以切换 ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    # 安装Qt（用 chocolatey 最快）
+    - name: Install Qt
+      run: |
+        choco install qt5 -y
+
+    # 可选：安装cmake
+    - name: Install CMake
+      run: |
+        choco install cmake -y
+
+    # 配置Qt环境变量
+    - name: Set Qt Env
+      run: |
+        echo "C:\Qt\5.12.5\msvc2017_64\bin" >> $env:GITHUB_PATH
+
+    # 构建DCMTK & 本项目
+    - name: Build
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_PREFIX_PATH="C:\Qt\5.12.5\msvc2017_64"
+        cmake --build . --config Release
+
+    # 创建zip包上传
+    - name: Archive Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: GrayscaleImageViewer-windows
+        path: build/Release/GrayscaleImageViewer.exe
